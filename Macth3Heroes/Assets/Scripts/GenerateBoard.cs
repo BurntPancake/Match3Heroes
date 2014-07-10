@@ -19,7 +19,6 @@ public class GenerateBoard : MonoBehaviour
 	private bool enableUser = false;
 
 	//Use for mouse interaction
-	private Vector2 mousePos;
 	private GameObject selected;//The first selected gem
 	private GameObject moveTo;//The second selected gem
 	
@@ -32,26 +31,24 @@ public class GenerateBoard : MonoBehaviour
 	}
 	
 	// Update is called once per frame
-	void Update () 
+	void FixedUpdate () 
 	{
 		if(enableUser)
 		{
 			if(Input.GetMouseButtonDown(0))
 			{
-				mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+				Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 				Collider2D collider = Physics2D.OverlapPoint(mousePos);
-				if(collider.gameObject.tag.Equals("gem"))
+				if(collider.gameObject.tag.Equals("gem") && selected != collider.gameObject)
 				{
+					if(selected != null)
+					{
+						selected.SendMessage("SetUnselected");//Clear the original selected
+					}
 					selected = collider.gameObject;
+					selected.SendMessage("SetSelected");
 				}
 			}
-		}
-
-		if(selected)
-		{
-			Debug.Log("Selected");
-			iTween.MoveBy(selected, iTween.Hash("y", 0.2,"easeType", "easeInOutExpo", "loopType", "pingPong", "time", 0.6));
-			iTween.ScaleAdd(selected, iTween.Hash("x", 0.1, "y", 0.1,"easeType", "easeInOutExpo", "loopType", "pingPong", "time", 0.6));
 		}
 	}
 
@@ -94,8 +91,8 @@ public class GenerateBoard : MonoBehaviour
 		iTween.ScaleFrom(cube, new Vector3(0,0,0), 2.5f);
 
 		cube.name = "1 " + temp;
-		cube.SendMessage("setX", i);
-		cube.SendMessage("setY", j);
+		cube.SendMessage("SetX", i);
+		cube.SendMessage("SetY", j);
 
 		return cube;
 	}
@@ -182,6 +179,8 @@ public class GenerateBoard : MonoBehaviour
 						iTween.MoveTo(gems[i,c],new Vector3(gemPrefab.transform.position.x + i, 
 						                                    gemPrefab.transform.position.y + c,0),
 						              2f);
+						gems[i,c].SendMessage("SetX", i);
+						gems[i,c].SendMessage("SetY", c);
 						yield return new WaitForSeconds(0.1f); 
 						c++;
 					}	
@@ -268,6 +267,8 @@ public class GenerateBoard : MonoBehaviour
 							iTween.MoveTo(gems[i+w,h], new Vector3(gemPrefab.transform.position.x + i + w,
 							                                       gemPrefab.transform.position.y + h,0),
 							              2f);
+							gems[i+w,h].SendMessage("SetX", i+w);
+							gems[i+w,h].SendMessage("SetY", h);
 							
 						}
 						yield return new WaitForSeconds(0.05f); 
