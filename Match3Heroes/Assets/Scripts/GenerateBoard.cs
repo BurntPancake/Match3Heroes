@@ -1,6 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+//TODO Generate Sprite Based On User Selection
+//TODO Special Combination Match
+//TODO Special Combination Generate Different Level Sprites
+//TODO If can be matched, Match at the user selected gem once, and then checkBoard
+
 public class GenerateBoard : MonoBehaviour 
 {
 	//Sprites of creatures
@@ -31,7 +36,7 @@ public class GenerateBoard : MonoBehaviour
 	}
 	
 	// Update is called once per frame
-	void FixedUpdate () 
+	void Update () 
 	{
 		if(enableUser)
 		{
@@ -43,10 +48,38 @@ public class GenerateBoard : MonoBehaviour
 				{
 					if(selected != null)
 					{
+
+						int i1 = (int)(collider.transform.position.x + 0.1 - gemPrefab.transform.position.x);
+						int j1 = (int)(collider.transform.position.y + 0.1 - gemPrefab.transform.position.y);
+						int i2 = (int)(selected.transform.position.x + 0.1 - gemPrefab.transform.position.x);
+						int j2 = (int)(selected.transform.position.y + 0.1 - gemPrefab.transform.position.y);
 						selected.SendMessage("SetUnselected");//Clear the original selected
+						selected = null;
+						//Debug.Log("Swap from " + i2 + " " + j2 + " To " + i1 + j1);
+						//Debug.Log(i1 + " " + j1);
+
+						if((Mathf.Abs(i1-i2) == 1 && Mathf.Abs(j1-j2) == 0) || 
+						   (Mathf.Abs(i1-i2) == 0 && Mathf.Abs(j1-j2) == 1))
+						{
+							if(CheckCanBeSwapped(i1,j1,i2,j2))
+							{
+								Debug.Log("Swapping");
+								SwapMatchedGems(i1,j1,i2,j2);//Animation 0.5f time
+								StartCoroutine(CheckBoard());//Wait 0.6f time at start
+							}
+							else
+							{
+								StartCoroutine(SwapUnmatchedGems(i1,j1,i2,j2));
+							}
+						}
 					}
-					selected = collider.gameObject;
-					selected.SendMessage("SetSelected");
+					else
+					{
+						selected = collider.gameObject;
+						selected.SendMessage("SetSelected");
+					}
+
+
 				}
 			}
 		}
@@ -87,8 +120,8 @@ public class GenerateBoard : MonoBehaviour
 		sr.sprite = spriteList[0][temp];
 
 		iTween.Init(cube);
-		iTween.RotateBy(cube, new Vector3(0,0,-8), 2f);
-		iTween.ScaleFrom(cube, new Vector3(0,0,0), 2.5f);
+		iTween.RotateBy(cube, new Vector3(0,0,-8), 1.5f);
+		iTween.ScaleFrom(cube, new Vector3(0,0,0), 2f);
 
 		cube.name = "1 " + temp;
 		cube.SendMessage("SetX", i);
@@ -99,9 +132,8 @@ public class GenerateBoard : MonoBehaviour
 
 	IEnumerator CheckBoard() 
 	{
-		yield return new WaitForSeconds(1f);  //Wait for animation to finish
-		
 		matched = false;
+		yield return new WaitForSeconds(0.6f);  //Wait for animation to finish
 		int sames = 0;
 		//Detect vertical matches
 		for(int i = gems.GetLength(0)-1; i >=0 ; i--)
@@ -131,17 +163,15 @@ public class GenerateBoard : MonoBehaviour
 					if(CheckSameColor(gems[i,j-2],gems[i,j-3]))//sames == 3, match 4
 					{
 						sames++;
+						if(j >= 4)
+						{
+							if(CheckSameColor(gems[i,j-3],gems[i,j-4]))//sames == 4, match 5
+							{
+								sames++;
+							}
+						}
 					}
 				}
-				
-				if(j >= 4)
-				{
-					if(CheckSameColor(gems[i,j-3],gems[i,j-4]))//sames == 4, match 5
-					{
-						sames++;
-					}
-				}
-				
 				//If 3 or more same cubes 
 				//match them and make them disappear and spawn/fall new cubes
 				
@@ -150,12 +180,12 @@ public class GenerateBoard : MonoBehaviour
 					//Destory cubes
 					for(int n = 0; n <= sames; n++)
 					{
-						iTween.RotateBy(gems[i,j-n], new Vector3(0,0,8), 1.5f);
-						iTween.ScaleTo(gems[i,j-n], new Vector3(0,0,0), 2f);
+						iTween.RotateBy(gems[i,j-n], new Vector3(0,0,8), 1f);
+						iTween.ScaleTo(gems[i,j-n], new Vector3(0,0,0), 1.5f);
 						//The actual gem game object is collected below after animation finished
 					}
 
-					yield return new WaitForSeconds(0.3f); 
+					yield return new WaitForSeconds(0.2f); 
 
 
 					for(int n = 0; n <= sames; n++)
@@ -181,7 +211,7 @@ public class GenerateBoard : MonoBehaviour
 						              2f);
 						gems[i,c].SendMessage("SetX", i);
 						gems[i,c].SendMessage("SetY", c);
-						yield return new WaitForSeconds(0.1f); 
+						yield return new WaitForSeconds(0.05f); 
 						c++;
 					}	
 					matched = true;
@@ -219,16 +249,18 @@ public class GenerateBoard : MonoBehaviour
 					if(CheckSameColor(gems[i+2,j],gems[i+3,j]))//sames == 3, match 4
 					{
 						sames++;
+						if(i <= 2)
+						{
+							if(CheckSameColor(gems[i+3,j],gems[i+4,j]))//sames == 4, match 5
+							{
+								sames++;
+							}
+						}
 					}
+
 				}
 				
-				if(i <= 2)
-				{
-					if(CheckSameColor(gems[i+3,j],gems[i+4,j]))//sames == 4, match 5
-					{
-						sames++;
-					}
-				}
+
 				
 				//If 3 or more same cubes 
 				//match them and make them disappear and spawn/fall new cubes
@@ -238,10 +270,10 @@ public class GenerateBoard : MonoBehaviour
 					//Destory cubes
 					for(int n = 0; n <= sames; n++)
 					{;
-						iTween.RotateBy(gems[i+n,j], new Vector3(0,0,8), 1.5f);
-						iTween.ScaleTo(gems[i+n,j], new Vector3(0,0,0), 2f);
+						iTween.RotateBy(gems[i+n,j], new Vector3(0,0,8), 1f);
+						iTween.ScaleTo(gems[i+n,j], new Vector3(0,0,0), 1.5f);
 					}
-					yield return new WaitForSeconds(0.3f); 
+					yield return new WaitForSeconds(0.2f); 
 
 
 					for(int n = 0; n <= sames; n++)
@@ -273,8 +305,7 @@ public class GenerateBoard : MonoBehaviour
 						}
 						yield return new WaitForSeconds(0.05f); 
 					}
-					matched = true;
-					
+					matched = true;				
 				}
 			}
 		}
@@ -296,9 +327,132 @@ public class GenerateBoard : MonoBehaviour
 		{
 			return false;
 		}
-		return (gb1.name.Substring(1).Equals(gb2.name.Substring(1))) ;
+		return (gb1.name.Substring(2).Equals(gb2.name.Substring(2))) ;
 	}
 
+	bool CheckSameColor(int i1, int j1, int i2, int j2)
+	{
+		if(i1 >= gems.GetLength(0) || i2 >= gems.GetLength(0) || j1 >= gems.GetLength(1) || j2 >= gems.GetLength(1) ||
+		   i1 < 0 || i2 <0 || j1 < 0 || j2 <0 )
+		{
+			return false;
+		}
+		else
+		{
+			Debug.Log(i1 + " " + j1 + " " + i2 + " " + j2);
+			return CheckSameColor(gems[i1,j1], gems[i2,j2]);
+		}
+	}
+
+	bool checkMatchExist(string[,] gems)
+	{
+		int sames = 0;
+		//Detect vertical matches
+		for(int i = gems.GetLength(0)-1; i >=0 ; i--)
+		{
+			for(int j = gems.GetLength(1)-1; j >= 2; j--)
+			{
+				sames = 0;
+				if(gems[i,j].Equals(gems[i,j-1]))
+				{
+					sames++;
+				}
+				else
+				{
+					continue;
+				}
+				if((gems[i,j-1].Equals(gems[i,j-2])))//sames == 2, match 3
+				{
+					sames++;
+				}
+				else
+				{
+					continue;
+				}
+
+				if(sames >= 2)
+				{
+					return true;
+				}
+			}
+		}
+
+		//Detect Horizontal Match
+		sames = 0;		
+		for(int j = gems.GetLength(1)-1; j >=0 ; j--)
+		{
+			for(int i = 0; i < gems.GetLength(0)-2; i++)
+			{
+				sames = 0;
+				if(gems[i,j].Equals(gems[i+1,j]))
+				{
+					sames++;
+				}
+				else
+				{
+					continue;
+				}
+				if(gems[i+1,j].Equals(gems[i+2,j]))//sames == 2, match 3
+				{
+					sames++;
+				}
+				else
+				{
+					continue;
+				}
+				
+				if (sames >= 2)
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	bool CheckCanBeSwapped(int i1, int j1, int i2, int j2)
+	{
+		if( (Mathf.Abs(i1-i2) == 1 && Mathf.Abs(j1-j2) == 0) || 
+		    (Mathf.Abs(i1-i2) == 0 && Mathf.Abs(j1-j2) == 1))
+		{
+			string[,] temp = new string[gems.GetLength(0),gems.GetLength(1)];
+			for(int i=0;i<gems.GetLength(0);i++)
+			{
+				for(int j=0;j<gems.GetLength(1);j++)
+				{
+					temp[i,j] = gems[i,j].name;
+				}
+			}
+			string gemTemp = temp[i1,j1].Substring(0);
+			temp[i1,j1] = temp[i2,j2].Substring(0);
+			temp[i2,j2] = gemTemp;
+			return checkMatchExist(temp);;
+		}
+		return false;
+	}
+
+	void SwapMatchedGems(int i1, int j1, int i2, int j2)
+	{
+		enableUser = false; //EnableUser will be true after CheckBoard()
+		iTween.MoveTo(gems[i1,j1], gems[i2,j2].transform.position, 0.5f);
+		iTween.MoveTo(gems[i2,j2], gems[i1,j1].transform.position, 0.5f);
+		GameObject temp = gems[i1,j1];
+		gems[i1,j1] = gems[i2,j2];
+		gems[i2,j2] = temp;
+	}
+
+	IEnumerator SwapUnmatchedGems(int i1, int j1, int i2, int j2)
+	{
+		enableUser = false; //EnableUser will be true after CheckBoard()
+		iTween.MoveTo(gems[i1,j1], gems[i2,j2].transform.position, 0.5f);
+		iTween.MoveTo(gems[i2,j2], gems[i1,j1].transform.position, 0.5f);
+		yield return new WaitForSeconds(0.5f);
+		iTween.MoveTo(gems[i2,j2], gems[i1,j1].transform.position, 0.5f);
+		iTween.MoveTo(gems[i1,j1], gems[i2,j2].transform.position, 0.5f);
+		yield return new WaitForSeconds(0.5f);
+		enableUser = true;
+	}
 }
 
 

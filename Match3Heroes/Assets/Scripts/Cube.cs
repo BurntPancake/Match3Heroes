@@ -61,9 +61,9 @@ public class Cube : MonoBehaviour
 		{
 			selected = true;
 			iTween.MoveBy(this.gameObject, 
-			              iTween.Hash("y",0.2, "easeType","easeInOutExpo", "loopType","pingPong", "time",0.6, "name","selectMoveEffect"));
+			              iTween.Hash("y",0.2, "easeType","easeInOutCirc", "loopType","pingPong", "time",0.6, "name","selectMoveEffect"));
 			iTween.ScaleAdd(this.gameObject, 
-			                iTween.Hash("x",0.1, "y",0.1, "easeType","easeInOutExpo", "loopType","pingPong", "time",0.6, "name","selectScaleEffect"));
+			                iTween.Hash("x",0.1, "y",0.1, "easeType","easeInOutCirc", "loopType","pingPong", "time",0.6, "name","selectScaleEffect"));
 		}
 	}
 
