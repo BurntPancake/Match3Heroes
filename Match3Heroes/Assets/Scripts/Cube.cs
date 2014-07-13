@@ -3,7 +3,7 @@ using System.Collections;
 
 public class Cube : MonoBehaviour 
 {
-	public float addScale = 0.3f;
+	private float addScale = 0.3f;
 
 	private int x;
 	private int y; //Position of cube in gem[,] of GenerateBoard
